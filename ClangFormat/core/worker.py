@@ -1,10 +1,10 @@
 import os
-from ClangFormat.util.format_handler import FormatHandler
+from ClangFormat.core.format_handler import FormatHandler
 
-from ClangFormat.util.settings import Settings, SETTINGS_NAME
-from ClangFormat.util.format_util import formatFile, isCxxFile, isExcluded
-from ClangFormat.util.singleton import Singleton
-from ClangFormat.util.file_tree import FileTree
+from ClangFormat.core.settings import Settings, SETTINGS_NAME
+from ClangFormat.core.format_util import formatFile, isCxxFile, isExcluded
+from ClangFormat.core.singleton import Singleton
+from ClangFormat.core.file_tree import FileTree
 
 from threading import Thread
 
@@ -21,40 +21,41 @@ class Worker(object):
     def setFormatHandler(self, handler):
         self._formatHandler = handler
 
-    def _scan(self, curPath, parentTree):
-        curName = os.path.basename(curPath)
-        tree = parentTree.child(curName)
+    def _recursiveScan(self, path, parentTree):
+        baseName = os.path.basename(path)
+        tree = parentTree.child(baseName)
         if tree and tree.attach:
-            print(curPath, 'has scanned')
+            print('path', path, 'has scanned')
             return
-        tree = parentTree.checkout(curName)
-        names = os.listdir(curPath)
-        try:
-            settingsIdx = names.index(SETTINGS_NAME)
-        except:
-            settingsIdx = -1
-        parentAttach = parentTree.attach
-        settings = Settings(
-            parentAttach[1] if parentAttach else None,
-            None if settingsIdx == -1 else os.path.join(
-                curPath, names[settingsIdx]))
-        if settingsIdx != -1:
-            names.pop(settingsIdx)
-        found = parentAttach[0] if parentAttach else False
-        subNames = []
+        tree = parentTree.checkout(baseName)
+        settingsPath = os.path.join(path, SETTINGS_NAME)
+        hasSetting = os.path.exists(settingsPath)
+        found = os.path.exists(os.path.join(path, '.clang-format'))
+        if not parentTree.attach:
+            settings = Settings(None, settingsPath if hasSetting else None)
+        else:
+            settings = Settings(parentTree.attach,
+                                settingsPath if hasSetting else None)
+        if found:
+            settings['has_config'] = True
+        names = os.listdir(path)
+        if hasSetting:
+            names.remove(SETTINGS_NAME)
+        if found:
+            names.remove('.clang-format')
+        subFolderNames = []
         ignored = settings['ignored']
         for name in names:
-            absPath = os.path.join(curPath, name)
+            absPath = os.path.join(path, name)
+            if isExcluded(absPath, ignored):
+                continue
             if os.path.isdir(absPath):
-                if not isExcluded(absPath, ignored):
-                    subNames.append(name)
-            elif not found and name == '.clang-format':
-                found = True
-            elif isCxxFile(absPath) and not isExcluded(absPath, ignored):
+                subFolderNames.append(name)
+            elif isCxxFile(absPath):
                 tree.paths.add(absPath)
-        tree.attach = (found, settings)
-        for name in subNames:
-            self._scan(os.path.join(curPath, name), tree)
+        tree.attach = settings
+        for name in subFolderNames:
+            self._recursiveScan(os.path.join(path, name), tree)
 
     def _debug(self):
         children = self._tree.children()
@@ -66,30 +67,34 @@ class Worker(object):
                 children.append(sub)
 
     def _ifFolderIgnored(self, folder):
-        if not self._tree.hasChild(): return False
-        tree = self._tree
-        parts = folder.split(os.sep)
-        while parts:
-            part = parts[0]
-            sub = tree.child(part)
-            if not sub: break
-            tree = sub
-            parts.pop(0)
-        if not parts: tree = tree.parent
-        if not tree.attach: return False
-        settings = tree.attach[1]
-        return isExcluded(folder, settings['ignored'])
+        tree, match = self._tree.match(folder)
+        ignored = None
+        if not match:
+            if not tree.attach:
+                return False
+            ignored = tree.attach['ignored']
+        else:
+            if not tree.parent or not tree.parent.attach:
+                return False
+            ignored = tree.parent.attach
+        return isExcluded(folder, ignored)
 
     def _scanFolder(self, folder):
         if self._ifFolderIgnored(folder):
             print('folder is ignored')
             return
+        tree = self._tree.getTree(folder)
+        refersh = tree and not tree.attach
         parent = os.path.dirname(folder)
         if parent == folder:
-            tree = self._tree
+            parentTree = self._tree
         else:
-            tree = self._tree.build(parent)
-        self._scan(folder, tree)
+            parentTree = self._tree.build(parent)
+        self._recursiveScan(folder, parentTree)
+        if refersh:
+            print('detect parent folder:', folder)
+            print('refersh folder:', folder)
+            self._refershTreeChildren(tree, folder)
 
     def _update(self):
         while self._folders:
@@ -110,20 +115,17 @@ class Worker(object):
 
     def _workOnTree(self, tree):
         if tree.attach:
-            self._workOnFiles(tree.attach[0], tree.paths)
+            self._workOnFiles(tree.attach['has_config'], tree.paths)
         for sub in tree.children():
             self._workOnTree(sub)
 
     def _refershTreeChildren(self, tree, prefix):
-        settings = tree.attach[1]
+        settings = tree.attach
         ignored = settings['ignored']
         removed = []
         names = os.listdir(prefix)
         for child in tree.children():
-            try:
-                names.pop(names.index(child.name))
-            except:
-                pass
+            names.remove(child.name)
             path = os.path.join(prefix, child.name)
             if isExcluded(path, ignored):
                 removed.append(child.name)
@@ -137,16 +139,19 @@ class Worker(object):
             if not os.path.isdir(absPath) or isExcluded(absPath, ignored):
                 continue
             print('new child:', absPath)
-            self._scan(absPath, tree)
+            self._recursiveScan(absPath, tree)
 
     def _reload(self, path):
         folder = os.path.dirname(path)
-        subTree = self._tree.getTree(folder)
-        if subTree:
+        sub = self._tree.getTree(folder)
+        if sub:
             print('reload format settings')
-            settings = subTree.attach[1]
-            settings.loadFrom(path)
-            self._refershTreeChildren(subTree, subTree.prefix())
+            settings = sub.attach
+            if settings:
+                settings.loadFrom(path)
+                self._refershTreeChildren(sub, folder)
+            else:
+                print('folder', folder, 'has not build yet')
             return True
         return False
 
@@ -174,6 +179,7 @@ class Worker(object):
         self.wait()
 
     def postFile(self, path):
+        self.wait()
         if not os.path.exists(path):
             return False
         if os.path.basename(path) == SETTINGS_NAME:
@@ -182,11 +188,14 @@ class Worker(object):
         tree = self._tree.getTree(os.path.dirname(path))
         if not tree:
             return False
-        settings = tree.attach[1]
+        settings = tree.attach
+        if not settings:
+            print('path', os.path.dirname(path), 'has not build yet')
+            return False
         if isExcluded(path, settings['ignored']):
             return False
         if settings['format_on_save']:
-            formatFile(path, tree.attach[0])
+            formatFile(path, settings['has_config'])
         else:
             tree.paths.add(path)
         return True
@@ -219,6 +228,10 @@ class Worker(object):
 
     def clean(self):
         self._tree.removeChildren()
+
+    @property
+    def tree(self):
+        return self._tree
 
 
 def instance():

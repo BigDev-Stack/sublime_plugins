@@ -1,4 +1,4 @@
-from ClangFormat.util.format_util import formatFile, findUpward
+from ClangFormat.core.format_util import formatFile, findUpward
 import os
 
 class FileFormatter:

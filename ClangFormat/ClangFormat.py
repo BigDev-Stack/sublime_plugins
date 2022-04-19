@@ -8,10 +8,10 @@ import time
 from time import sleep
 import traceback
 
-from ClangFormat.util.worker import Worker, instance
-from ClangFormat.util.orphaned_format_manager import OrphanedFormatManager
-from ClangFormat.util.format_handler import FormatHandler
-from ClangFormat.util.singleton import Singleton
+from ClangFormat.core.worker import Worker, instance
+from ClangFormat.core.orphaned_format_manager import OrphanedFormatManager
+from ClangFormat.core.format_handler import FormatHandler
+from ClangFormat.core.singleton import Singleton
 
 import threading
 from threading import Thread

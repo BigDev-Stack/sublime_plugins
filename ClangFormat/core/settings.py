@@ -6,27 +6,18 @@ SETTINGS_NAME = 'clang-format-settings.json'
 
 class Settings:
 
-    __initialParams__ = [('ignored', []), ('format_on_save', False)]
+    __initialParams__ = [('ignored', []), ('format_on_save', False),
+                         ('has_config', False)]
 
     def __init__(self, parent, path):
         self._parent = parent
-        self._values = None
-        if not path:
-            if parent:
-                self._values = {}
-        else:
-            try:
-                with open(path, 'r') as file:
-                    self._values = json.loads(file.read())
-            except Exception as e:
-                traceback.print_exc(e)
-                pass
+        self._values = {}
+        if path:
+            self.loadFrom(path)
         self._check()
 
     def _check(self):
         if not self._parent:
-            if self._values is None:
-                self._values = {}
             for key, value in Settings.__initialParams__:
                 if self._values.get(key) is None:
                     self._values[key] = value
@@ -63,6 +54,9 @@ class Settings:
     def loadFrom(self, path):
         try:
             with open(path, 'r') as f:
-                self._values = json.loads(f.read())
-        except:
-            self._values = {}
+                data = json.loads(f.read())
+                if 'has_config' in data:
+                    del data['has_config']
+                self._values.update(data)
+        except Exception as e:
+            traceback.print_exc(e)

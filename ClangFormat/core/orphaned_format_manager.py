@@ -1,7 +1,7 @@
 import sublime
-from ClangFormat.util.file_formatter import FileFormatter
-from ClangFormat.util.format_util import isCxxFile
-from ClangFormat.util.singleton import Singleton
+from ClangFormat.core.file_formatter import FileFormatter
+from ClangFormat.core.format_util import isCxxFile
+from ClangFormat.core.singleton import Singleton
 import os
 
 @Singleton

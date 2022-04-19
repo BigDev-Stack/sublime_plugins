@@ -88,6 +88,7 @@ class FileTree:
         tree = self
         parts = folder.split(os.sep)
         for part in parts:
+            if not part: continue
             sub = tree._children.get(part)
             if not sub:
                 sub = FileTree(part)
@@ -117,19 +118,6 @@ class FileTree:
         tree = self.getTree(folder)
         return tree and path in tree._paths
 
-    def _scanFolders(self, curPath, paths):
-        curPath = os.path.join(curPath, os.sep, self._name)
-        if not self._children:
-            paths.append(curPath)
-            return
-        for child in self._children.values():
-            child._scanFolders(curPath, paths)
-
-    def getTreeFolders(self):
-        folders = []
-        self._scanFolders(self._name, folders)
-        return folders
-
     def child(self, name):
         return self._children.get(name)
 
@@ -146,3 +134,22 @@ class FileTree:
             names.insert(0, tree._name)
             tree = tree._par
         return os.sep.join(names)
+
+    def match(self, path):
+        tree = self
+        parts = path.split(os.sep)
+        for part in parts:
+            if not part: continue
+            sub = tree.child(part)
+            if not sub: break
+            tree = sub
+        else:
+            return tree, True
+        return tree, False
+
+    def __repr__(self):
+        data = {}
+        data['name'] = self._name
+        data['children'] = self._children
+        data['parent'] = self.parent.name if self.parent else ''
+        return str(data)
