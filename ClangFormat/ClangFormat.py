@@ -33,6 +33,10 @@ class Handler(FormatHandler):
         sublime.active_window().active_view().erase_status("format_path")
 
 
+manager = OrphanedFormatManager()
+worker = instance()
+
+
 @Singleton
 class ClangFormatDispatcher:
 
@@ -40,33 +44,35 @@ class ClangFormatDispatcher:
         self._initialize()
 
     def _initialize(self):
-        self._manager = OrphanedFormatManager()
-        self._worker = instance()
-        self._worker.setFormatHandler(Handler())
+        global worker
+        worker.setFormatHandler(Handler())
 
     def dispatch(self, paths):
+        global worker, manager
         for path in paths:
             if not path: continue
             if os.path.isfile(path):
-                if not self._worker.postSavedFile(path):
-                    self._manager.exec(path)
+                if not worker.postSavedFile(path):
+                    manager.exec(path)
             else:
-                self._worker.addFolder(path)
-                self._worker.workAsync()
+                worker.addFolder(path)
+                worker.workAsync()
 
     def cancel(self, paths):
+        global worker, manager
         for path in paths:
             if not os.path.isdir(path):
-                self._manager.remove(path)
+                manager.remove(path)
             else:
                 print('remove folder:', path)
-                self._worker.removeFolder(path)
+                worker.removeFolder(path)
 
     def invalidate(self):
-        self._worker.wait()
-        self._worker.clean()
+        global worker, manager
+        worker.wait()
+        worker.clean()
         print('clean worker')
-        self._manager.reset()
+        manager.reset()
 
 
 def dispatcher():
@@ -78,6 +84,15 @@ class ClangFormatListener(sublime_plugin.EventListener):
     def on_post_save(self, view):
         dispatcher().dispatch([view.file_name()])
         pass
+
+    def on_modified(self, view):
+        path = view.file_name()
+        if not path: return
+        print('modify', path)
+        global manager
+        formatter = manager.formatter(path)
+        if formatter:
+            formatter.modified = True
 
     def on_pre_close_window(self, window):
         print('close window')

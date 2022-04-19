@@ -4,6 +4,7 @@ from ClangFormat.core.format_util import isCxxFile
 from ClangFormat.core.singleton import Singleton
 import os
 
+
 @Singleton
 class OrphanedFormatManager:
 
