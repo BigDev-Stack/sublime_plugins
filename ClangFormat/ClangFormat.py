@@ -88,7 +88,6 @@ class ClangFormatListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         path = view.file_name()
         if not path: return
-        print('modify', path)
         global manager
         formatter = manager.formatter(path)
         if formatter:

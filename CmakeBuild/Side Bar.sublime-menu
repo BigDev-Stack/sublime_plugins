@@ -1,0 +1,7 @@
+[
+    {
+        "caption":"cmake build",
+        "args":{"paths":[]},
+        "command":"cmake_build"
+    },
+]

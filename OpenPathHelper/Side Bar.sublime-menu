@@ -1,0 +1,12 @@
+[
+    {
+        "caption":"Open In Explorer",
+        "args":{"paths":[]},
+        "command":"open_path"
+    },
+    {
+        "caption":"Open In Terminal",
+        "args":{"paths":[]},
+        "command":"open_terminal"
+    }
+]
