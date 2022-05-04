@@ -56,4 +56,3 @@ class OpenTerminalCommand(sublime_plugin.TextCommand):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  universal_newlines=True)
-            # out, err = p.communicate()

@@ -69,7 +69,8 @@ def build(path, clean=True):
     buildFolder = os.path.join(path, buildName)
     if clean:
         print('clean', buildName)
-        delete(buildFolder)
+        if os.path.exists(buildFolder):
+            delete(buildFolder)
     if not os.path.exists(buildFolder):
         os.mkdir(buildFolder)
     buildThread = Thread(target=_cmakeBuildRun, args=(path, buildName))
