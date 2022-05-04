@@ -2,11 +2,10 @@ import sublime, sublime_plugin
 import os
 import subprocess
 from threading import Thread
+import json
+import traceback
 
 buildThread = None
-
-settings = sublime.load_settings('CmakeBuild.sublime-settings')
-print(settings.get('template'))
 
 
 def delete(path):
@@ -21,8 +20,22 @@ def delete(path):
     print('remove path:', path)
 
 
+def loadSettings():
+    packagesPath = sublime.packages_path()
+    settingsPath = os.path.join(packagesPath,
+                                'CmakeBuild/CmakeBuild.sublime-settings')
+    settings = {}
+    if os.path.exists(settingsPath):
+        try:
+            with open(settingsPath, 'r') as file:
+                settings.update(json.loads(file.read()))
+        except Exception as e:
+            traceback.print_exc(e)
+    return settings
+
+
 def _cmakeBuildRun(path, buildName):
-    global settings
+    settings = loadSettings()
     buildFolder = os.path.join(path, buildName)
     command = 'cd ' + buildFolder + ' && cmake -G "{}" .. && cmake --build .'.format(
         settings.get('template'))

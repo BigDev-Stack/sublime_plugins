@@ -60,18 +60,18 @@ class DocerListener(sublime_plugin.TextChangeListener):
             lastChange = changes[-1]
             hasEnter, add = handleInput(changes)
             if not hasEnter:
-                print('no enter press, ignored')
+                # print('no enter press, ignored')
                 return
             current = lastChange.a.pt if lastChange.b.pt > lastChange.a.pt else lastChange.b.pt + len(
                 lastChange.str)
             region = view.full_line(current)
             line = view.substr(region)
-            print('current line:', line)
+            # print('current line:', line)
             prevRegion = view.full_line(region.a - 1)
             prevLine = view.substr(prevRegion)
-            print('prev line:', prevLine)
+            # print('prev line:', prevLine)
             if not isDocerLine(prevLine):
-                print('not docer line')
+                # print('not docer line')
                 return
             print('detect docer line')
             idx = prevLine.count(' ')
