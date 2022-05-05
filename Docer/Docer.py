@@ -16,22 +16,40 @@ class DocerCommand(sublime_plugin.TextCommand):
 
 def isDocerLine(line):
     trimmedLine = line.strip(' \n')
-    return trimmedLine.startswith('/*') or (not trimmedLine.startswith('*/')
-                                            and trimmedLine.startswith('*'))
+    return trimmedLine.startswith('/*') or (trimmedLine[0] == '*'
+                                            and trimmedLine[1] != '/')
 
 
 def checkDocerRegion(region):
     view = sublime.active_window().active_view()
+    currentRegion = region
+    while True:
+        if currentRegion.a == 0:
+            return False
+        prevRegion = view.full_line(currentRegion.a - 1)
+        prevLine = view.substr(prevRegion)
+        trimmedLine = prevLine.strip(' \n')
+        if trimmedLine.startswith('/*') or trimmedLine.endswith('/*'):
+            return True
+        if trimmedLine.startswith('*/') or trimmedLine.endswith('*/'):
+            return False
+        currentRegion = prevRegion
+
+
+def hasDocerEnd(region):
+    view = sublime.active_window().active_view()
     total = view.size()
     while True:
         nextRegion = view.full_line(region.b)
-        if region.b == nextRegion.b:
-            return 2
-        if view.substr(nextRegion).strip(' \n').startswith('*'):
-            return 1
-        return 2
+        if nextRegion.b == region.b:
+            return False
+        nextLine = view.substr(nextRegion)
+        trimmedLine = nextLine.strip(' \n')
+        if trimmedLine.startswith('*/') or trimmedLine.endswith('*/'):
+            return True
+        if trimmedLine.startswith('/*') or trimmedLine.endswith('/*'):
+            return False
         region = nextRegion
-    raise RuntimeError('should not at here')
 
 
 def handleInput(changes):
@@ -57,34 +75,50 @@ class DocerListener(sublime_plugin.TextChangeListener):
             view = sublime.active_window().active_view()
             path = view.file_name()
             if not path: return
+            fmtIdx = path.rfind('.')
+            if fmtIdx == -1:
+                print('unknown file format')
+                return
+            fmt = path[fmtIdx:]
+            for cxxFmt in [
+                    '.h', '.hxx', '.hu', '.hpp', '.c', '.cc', '.cpp', '.cu'
+            ]:
+                if fmt == cxxFmt:
+                    break
+            else:
+                return
             lastChange = changes[-1]
             hasEnter, add = handleInput(changes)
             if not hasEnter:
-                # print('no enter press, ignored')
                 return
             current = lastChange.a.pt if lastChange.b.pt > lastChange.a.pt else lastChange.b.pt + len(
                 lastChange.str)
             region = view.full_line(current)
             line = view.substr(region)
-            # print('current line:', line)
+            if not checkDocerRegion(region):
+                return
+            mode = 1 if hasDocerEnd(region) else 2
             prevRegion = view.full_line(region.a - 1)
             prevLine = view.substr(prevRegion)
-            # print('prev line:', prevLine)
-            if not isDocerLine(prevLine):
-                # print('not docer line')
-                return
-            print('detect docer line')
-            idx = prevLine.count(' ')
+            print('detect docer line:', mode)
+            idx = 0
+            for i in range(0, len(prevLine)):
+                if prevLine[i] != ' ':
+                    break
+                idx += 1
             inserted = ''
-            if prevLine[idx] == '/':
-                inserted += ' * \n'
-                inserted += prevLine[:idx]
-                inserted += ' */'
+            if mode == 2:
+                if prevLine[idx] == '/':
+                    inserted += ' '
+                inserted += '* \n'
+                if idx:
+                    inserted += prevLine[:idx]
+                if prevLine[idx] == '/':
+                    inserted += ' '
+                inserted += '*/'
             else:
                 inserted += '* '
-            ret = checkDocerRegion(region)
             view.run_command('docer', {
-                'ret': ret,
                 'current': current,
                 'content': inserted
             })

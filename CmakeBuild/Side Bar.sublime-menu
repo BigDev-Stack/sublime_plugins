@@ -1,6 +1,6 @@
 [
     {
-        "caption":"cmake build",
+        "caption":"CMake Build",
         "args":{"paths":[]},
         "command":"cmake_build"
     },
