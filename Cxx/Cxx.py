@@ -49,7 +49,7 @@ class CxxCommand(sublime_plugin.TextCommand):
             srcPath = prefix + '.cc'
             if not os.path.exists(headerPath):
                 with open(headerPath, 'w') as file:
-                    file.write('pragma once\n\n')
+                    file.write('#pragma once\n\n')
                     file.write('class {} {};'.format(usrInput, '{}'))
             if not os.path.exists(srcPath):
                 with open(srcPath, 'w') as file:
