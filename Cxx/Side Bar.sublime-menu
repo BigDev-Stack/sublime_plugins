@@ -1,7 +1,12 @@
 [
     {
-        "caption":"Cxx",
+        "caption":"Create Cxx class",
         "args":{"paths":[]},
         "command":"cxx"
+    },
+    {
+        "caption":"Create C Files",
+        "args":{"paths":[]},
+        "command":"c"
     }
 ]
