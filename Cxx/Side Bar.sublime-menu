@@ -1,0 +1,7 @@
+[
+    {
+        "caption":"Cxx",
+        "args":{"paths":[]},
+        "command":"cxx"
+    }
+]
