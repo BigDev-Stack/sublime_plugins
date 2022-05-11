@@ -37,8 +37,8 @@ def loadSettings():
 def _cmakeBuildRun(path, buildName):
     settings = loadSettings()
     buildFolder = os.path.join(path, buildName)
-    command = 'cd ' + buildFolder + ' && cmake -G "{}" .. && cmake --build .'.format(
-        settings.get('template'))
+    command = 'cd ' + buildFolder + ' && cmake -G "{}" {} && cmake --build .'.format(
+        settings.get('template'), path)
     print('cmake command:', command)
     logFile = open(os.path.join(path, 'log.txt'), 'w')
     rfd, wfd = os.pipe()
@@ -65,7 +65,7 @@ def _cmakeBuildRun(path, buildName):
     print('proc execute finished')
 
 
-def build(path, clean=True):
+def build(path, clean=False):
     global buildThread
     if buildThread:
         print('join thread')
@@ -95,4 +95,5 @@ class CmakeBuildCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, paths=None):
         path = paths[0] if paths else None
+        print('cmake project:', path)
         build(path)

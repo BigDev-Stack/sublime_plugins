@@ -55,14 +55,18 @@ def hasDocerEnd(region):
 def handleInput(changes):
     add = 0
     hasEnter = False
+    string = ''
     for change in changes:
         if change.str.find('\n') != -1:
             hasEnter = True
         if change.a.pt < change.b.pt:
             add -= change.len_utf8
+            if add >= 0:
+                string = string[:add]
         else:
             add += len(change.str)
-    return hasEnter, add
+            string += change.str
+    return hasEnter, add, string
 
 
 class DocerListener(sublime_plugin.TextChangeListener):
@@ -88,7 +92,7 @@ class DocerListener(sublime_plugin.TextChangeListener):
             else:
                 return
             lastChange = changes[-1]
-            hasEnter, add = handleInput(changes)
+            hasEnter, add, string = handleInput(changes)
             if not hasEnter:
                 return
             current = lastChange.a.pt if lastChange.b.pt > lastChange.a.pt else lastChange.b.pt + len(
@@ -100,24 +104,21 @@ class DocerListener(sublime_plugin.TextChangeListener):
             mode = 1 if hasDocerEnd(region) else 2
             prevRegion = view.full_line(region.a - 1)
             prevLine = view.substr(prevRegion)
-            print('detect docer line:', mode)
-            idx = 0
-            for i in range(0, len(prevLine)):
-                if prevLine[i] != ' ':
-                    break
-                idx += 1
+            print('detect docer line:', mode, add)
+            enterIdx = string.find('\n')
+            filled = len(string) - enterIdx - 1
+            print('filled:', filled)
             inserted = ''
+            total = prevLine.rfind('*')
+            print(total - filled, total, filled)
+            for i in range(0, total - filled):
+                inserted += ' '
+            inserted += '* '
             if mode == 2:
-                if prevLine[idx] == '/':
-                    inserted += ' '
-                inserted += '* \n'
-                if idx:
-                    inserted += prevLine[:idx]
-                if prevLine[idx] == '/':
+                inserted += '\n'
+                for i in range(0, total):
                     inserted += ' '
                 inserted += '*/'
-            else:
-                inserted += '* '
             view.run_command('docer', {
                 'current': current,
                 'content': inserted
