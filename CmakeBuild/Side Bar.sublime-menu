@@ -4,4 +4,9 @@
         "args":{"paths":[]},
         "command":"cmake_build"
     },
+    {
+        "caption":"Cmake Rebuild",
+        "args":{"paths":[]},
+        "command":"cmake_rebuild"
+    }
 ]

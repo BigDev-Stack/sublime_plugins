@@ -37,8 +37,10 @@ def loadSettings():
 def _cmakeBuildRun(path, buildName):
     settings = loadSettings()
     buildFolder = os.path.join(path, buildName)
+    templateName = 'template_win32' if sublime.platform(
+    ) == 'windows' else 'template_unix'
     command = 'cd ' + buildFolder + ' && cmake -G "{}" {} && cmake --build .'.format(
-        settings.get('template'), path)
+        settings.get(templateName), path)
     print('cmake command:', command)
     logFile = open(os.path.join(path, 'log.txt'), 'w')
     rfd, wfd = os.pipe()
@@ -68,7 +70,6 @@ def _cmakeBuildRun(path, buildName):
 def build(path, clean=False):
     global buildThread
     if buildThread:
-        print('join thread')
         buildThread.join()
     if not path: return
     if not os.path.isdir(path):
@@ -97,3 +98,11 @@ class CmakeBuildCommand(sublime_plugin.TextCommand):
         path = paths[0] if paths else None
         print('cmake project:', path)
         build(path)
+
+
+class CmakeRebuildCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, paths=None):
+        path = paths[0] if paths else None
+        print('cmake project:', path)
+        build(path, True)

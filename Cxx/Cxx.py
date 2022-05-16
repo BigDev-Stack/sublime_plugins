@@ -31,12 +31,7 @@ def createCxxTemplate(path, isCpp):
         if not parseClassName(usrInput):
             print('invalid class name')
             return
-        fileName = ''
-        for ch in usrInput:
-            if ch >= 'A' and ch <= 'Z':
-                if fileName:
-                    fileName += '_'
-            fileName += ch.lower()
+        fileName = usrInput
         print('file name:', fileName)
         prefix = os.path.join(path, fileName)
         headerPath = prefix + '.h'

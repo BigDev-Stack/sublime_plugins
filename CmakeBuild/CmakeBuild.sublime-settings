@@ -1,3 +1,4 @@
 {
-    "template":"MinGW Makefiles"
+    "template_win32":"MinGW Makefiles",
+    "template_unix":"Unix Makefiles"
 }

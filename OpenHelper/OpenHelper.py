@@ -5,12 +5,18 @@ import subprocess
 
 
 def genOpenDirCommand(path):
-    return 'explorer "' + path + '"'
+    if sublime.platform() == 'windows':
+        return 'explorer "' + path + '"'
+    elif sublime.platform() == 'linux':
+        return 'nautilus --browser {}'.format(path)
 
 
 def genOpenShellCommand(path):
-    path = "'" + path + "'"
-    return 'start powershell -NoExit Set-Location ' + path
+    if sublime.platform() == 'windows':
+        path = "'" + path + "'"
+        return 'start powershell -NoExit Set-Location ' + path
+    elif sublime.platform() == 'linux':
+        return 'gnome-terminal --window --working-directory={}'.format(path)
 
 
 class OpenPathCommand(sublime_plugin.TextCommand):
