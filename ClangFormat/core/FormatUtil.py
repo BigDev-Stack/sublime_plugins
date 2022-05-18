@@ -1,13 +1,25 @@
 import os
+import subprocess
 
 
-def formatFile(filePath, found):
-    command = 'clang-format -style='
+def formatFile(filePath, found, executable):
+    command = '{} -style='.format(executable)
     command += 'file' if found == True else 'Google'
     filePath = '\"' + filePath + '\"'
     command += ' ' + filePath + ' -i ' + filePath
     print('exec command:', command)
-    os.popen(command)
+    p = subprocess.Popen(command,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True,
+                         bufsize=1)
+    out, err = p.communicate()
+    if out:
+        print(out)
+    if err:
+        print(err)
+    return not err
 
 
 def findUpward(path, fileName, recursive=True):

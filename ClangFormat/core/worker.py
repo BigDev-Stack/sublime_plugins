@@ -1,10 +1,10 @@
 import os
-from ClangFormat.core.format_handler import FormatHandler
+from ClangFormat.core.FormatHandler import FormatHandler
 
 from ClangFormat.core.settings import Settings, SETTINGS_NAME
-from ClangFormat.core.format_util import formatFile, isCxxFile, isExcluded
+from ClangFormat.core.FormatUtil import formatFile, isCxxFile, isExcluded
 from ClangFormat.core.singleton import Singleton
-from ClangFormat.core.file_tree import FileTree
+from ClangFormat.core.FileTree import FileTree
 
 from threading import Thread
 
@@ -12,11 +12,12 @@ from threading import Thread
 @Singleton
 class Worker(object):
 
-    def __init__(self, folders):
+    def __init__(self, folders, settings):
         self._folders = [folder for folder in folders]
         self._formatHandler = None
         self._thread = None
         self._tree = FileTree('')
+        self._globalSettings = settings
 
     def setFormatHandler(self, handler):
         self._formatHandler = handler
@@ -110,7 +111,7 @@ class Worker(object):
         for idx, path in enumerate(paths):
             if self._formatHandler:
                 self._formatHandler.onFormat(path, idx + 1)
-            formatFile(path, found)
+            formatFile(path, found, self._globalSettings['executable'])
         paths.clear()
 
     def _workOnTree(self, tree):
@@ -195,7 +196,8 @@ class Worker(object):
         if isExcluded(path, settings['ignored']):
             return False
         if settings['format_on_save']:
-            formatFile(path, settings['has_config'])
+            formatFile(path, settings['has_config'],
+                       self._globalSettings['executable'])
         else:
             tree.paths.add(path)
         return True
@@ -234,5 +236,5 @@ class Worker(object):
         return self._tree
 
 
-def instance():
-    return Worker([])
+def instance(settings):
+    return Worker([], settings)

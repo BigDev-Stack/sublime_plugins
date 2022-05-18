@@ -43,6 +43,11 @@ class OpenPathCommand(sublime_plugin.TextCommand):
             elif err:
                 view.set_status("open_path", "open path: " + path + ' ' + err)
 
+        def _callback():
+            view.erase_status('open_path')
+
+        sublime.set_timeout(_callback, 3000)
+
 
 class OpenTerminalCommand(sublime_plugin.TextCommand):
 
@@ -62,3 +67,8 @@ class OpenTerminalCommand(sublime_plugin.TextCommand):
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  universal_newlines=True)
+
+        def _callback():
+            view.erase_status('open_terminal')
+
+        sublime.set_timeout(_callback, 3000)

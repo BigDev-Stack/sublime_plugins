@@ -1,0 +1,10 @@
+[
+	{
+		"keys":["ctrl+shift+delete"],
+		"command":"clean_format"
+	},
+	{
+		"keys":["ctrl+alt+l"],
+		"command":"clang_formats"
+	}
+]

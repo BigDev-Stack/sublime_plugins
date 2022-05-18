@@ -1,6 +1,5 @@
-import sublime
-from ClangFormat.core.file_formatter import FileFormatter
-from ClangFormat.core.format_util import isCxxFile
+from ClangFormat.core.FileFormatter import FileFormatter
+from ClangFormat.core.FormatUtil import isCxxFile
 from ClangFormat.core.singleton import Singleton
 import os
 
@@ -8,8 +7,9 @@ import os
 @Singleton
 class OrphanedFormatManager:
 
-    def __init__(self):
+    def __init__(self, settings):
         self._formatters = {}
+        self._globalSettings = settings
 
     def _checkoutFormatter(self, filePath):
         formatter = self._formatters.get(filePath, None)
@@ -22,10 +22,9 @@ class OrphanedFormatManager:
         if not os.path.isfile(filePath) or not isCxxFile(filePath):
             return
         formatter = self._checkoutFormatter(filePath)
-        autoFormat = sublime.load_settings('ClangFormat.sublime-settings').get(
-            'format_on_save', False)
+        autoFormat = self._globalSettings['format_on_save']
         if formatter and autoFormat:
-            formatter.format()
+            formatter.format(self._globalSettings['executable'])
 
     def formatter(self, path):
         return self._formatters.get(path)

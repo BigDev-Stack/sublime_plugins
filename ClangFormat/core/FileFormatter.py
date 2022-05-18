@@ -1,5 +1,6 @@
-from ClangFormat.core.format_util import formatFile, findUpward
+from ClangFormat.core.FormatUtil import formatFile, findUpward
 import os
+import sublime
 
 
 class FileFormatter:
@@ -9,10 +10,10 @@ class FileFormatter:
         self._found = findUpward(filePath, '.clang-format')
         self._modified = True
 
-    def format(self):
+    def format(self, executable):
         if self._modified:
-            formatFile(self._path, self._found)
-            self._modified = False
+            self._modified = not formatFile(self._path, self._found,
+                                            executable)
 
     @property
     def modified(self):

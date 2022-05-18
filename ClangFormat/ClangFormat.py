@@ -9,12 +9,29 @@ from time import sleep
 import traceback
 
 from ClangFormat.core.worker import Worker, instance
-from ClangFormat.core.orphaned_format_manager import OrphanedFormatManager
-from ClangFormat.core.format_handler import FormatHandler
+from ClangFormat.core.OrphanedFormatManager import OrphanedFormatManager
+from ClangFormat.core.FormatHandler import FormatHandler
 from ClangFormat.core.singleton import Singleton
 
 import threading
 from threading import Thread
+
+_settings = {}
+
+
+def _loadSettings():
+    global _settings
+    _settings.clear()
+    settingsPath = os.path.join(sublime.packages_path(),
+                                'ClangFormat/ClangFormat.sublime-settings')
+    if os.path.exists(settingsPath):
+        try:
+            with open(settingsPath, 'r') as file:
+                _settings.update(json.loads(file.read()))
+        except Exception as e:
+            traceback.print_exc(e)
+    print(_settings)
+    return _settings
 
 
 class Handler(FormatHandler):
@@ -33,8 +50,9 @@ class Handler(FormatHandler):
         sublime.active_window().active_view().erase_status("format_path")
 
 
-manager = OrphanedFormatManager()
-worker = instance()
+_loadSettings()
+manager = OrphanedFormatManager(_settings)
+worker = instance(_settings)
 
 
 @Singleton
@@ -82,7 +100,14 @@ def dispatcher():
 class ClangFormatListener(sublime_plugin.EventListener):
 
     def on_post_save(self, view):
-        dispatcher().dispatch([view.file_name()])
+        path = view.file_name()
+        if path and path == os.path.join(
+                sublime.packages_path(),
+                'ClangFormat/ClangFormat.sublime-settings'):
+            print('load ClangFormat sublime-settings')
+            _loadSettings()
+            return
+        dispatcher().dispatch([path])
         pass
 
     def on_modified(self, view):
@@ -117,13 +142,13 @@ class ClangFormatCommand(sublime_plugin.TextCommand):
         dispatcher().dispatch([self.view.file_name()])
 
 
-class ClangFormatWindowCommand(sublime_plugin.TextCommand):
+class ClangFormatProjectCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         dispatcher().dispatch(sublime.active_window().folders())
 
 
-class CloseWindowFormatCommand(sublime_plugin.TextCommand):
+class CleanFormatCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
         dispatcher().invalidate()
