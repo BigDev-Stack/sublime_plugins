@@ -3,12 +3,13 @@ import sublime, sublime_plugin
 import os
 import subprocess
 
-
 def genOpenDirCommand(path):
     if sublime.platform() == 'windows':
         return 'explorer "' + path + '"'
     elif sublime.platform() == 'linux':
         return 'nautilus --browser {}'.format(path)
+    elif sublime.platform()=='osx':
+        return 'open "{}"'.format(path)
 
 
 def genOpenShellCommand(path):
@@ -17,6 +18,9 @@ def genOpenShellCommand(path):
         return 'start powershell -NoExit Set-Location ' + path
     elif sublime.platform() == 'linux':
         return 'gnome-terminal --window --working-directory={}'.format(path)
+    elif sublime.platform()=='osx':
+        command="""osascript -e 'tell application "Terminal" to activate' -e 'tell application "Terminal" to do script "cd \\"{}\\" "'""".format(path)
+        return command
 
 
 class OpenPathCommand(sublime_plugin.TextCommand):
@@ -38,9 +42,11 @@ class OpenPathCommand(sublime_plugin.TextCommand):
                                  stderr=subprocess.PIPE,
                                  universal_newlines=True)
             out, err = p.communicate()
+            # print(err)
+            # print(out, err)
             if out:
                 view.set_status("open_path", "open path: " + path + ' ' + out)
-            elif err:
+            if err:
                 view.set_status("open_path", "open path: " + path + ' ' + err)
 
         def _callback():
