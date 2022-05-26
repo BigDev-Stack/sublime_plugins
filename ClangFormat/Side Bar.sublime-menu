@@ -1,0 +1,12 @@
+[
+    {
+        "caption":"Clang Format folder",
+        "args":{"paths":[]},
+        "command":"clang_format_folder"
+    },
+    {
+        "caption":"Clang Format File",
+        "args":{"paths":[]},
+        "command":"clang_format_file"
+    }
+]
