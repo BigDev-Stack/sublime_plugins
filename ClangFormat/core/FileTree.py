@@ -5,6 +5,7 @@ class FileTree:
 
     def __init__(self, name):
         self._paths = set()
+        self._modified = set()
         self._name = name
         self._children = {}
         self._par = None
@@ -68,6 +69,10 @@ class FileTree:
     def paths(self):
         return self._paths
 
+    @property
+    def modified(self):
+        return self._modified
+
     def __contains__(self, path):
         return self.getTree(path) is not None
 
@@ -75,14 +80,14 @@ class FileTree:
         return [tree for tree in self._children.values()]
 
     @classmethod
-    def getTreeFileCount(cls, tree):
-        count = len(tree._paths)
+    def getTreeFileCount(cls, tree, modified=False):
+        count = len(tree._paths if not modified else tree._modified)
         for sub in tree._children.values():
-            count += cls.getTreeFileCount(sub)
+            count += cls.getTreeFileCount(sub, modified)
         return count
 
-    def fileCount(self):
-        return FileTree.getTreeFileCount(self)
+    def fileCount(self, modified=False):
+        return FileTree.getTreeFileCount(self, modified)
 
     def _buildFolder(self, folder):
         tree = self
@@ -127,7 +132,7 @@ class FileTree:
     def hasFile(self):
         return len(self._paths)
 
-    def prefix(self):
+    def cwd(self):
         names = []
         tree = self
         while tree._par:
@@ -153,3 +158,18 @@ class FileTree:
         data['children'] = self._children
         data['parent'] = self.parent.name if self.parent else ''
         return str(data)
+
+    def markModified(self, path):
+        if path in self._paths:
+            self._modified.add(path)
+        elif os.path.samefile(os.path.dirname(path), self.cwd()):
+            self._paths.add(path)
+            self._modified.add(path)
+        else:
+            return False
+        return True
+
+    def newPath(self, path):
+        if path not in self._paths:
+            self._paths.add(path)
+            self._modified.add(path)

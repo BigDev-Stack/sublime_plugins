@@ -8,10 +8,10 @@ import time
 from time import sleep
 import traceback
 
-from ClangFormat.core.worker import Worker, instance
-from ClangFormat.core.OrphanedFormatManager import OrphanedFormatManager
+from ClangFormat.core.Worker import Worker, instance
 from ClangFormat.core.FormatHandler import FormatHandler
-from ClangFormat.core.singleton import Singleton
+from ClangFormat.core.Singleton import Singleton
+from ClangFormat.core.Settings import Settings
 
 import threading
 from threading import Thread
@@ -51,8 +51,7 @@ class Handler(FormatHandler):
 
 
 _loadSettings()
-manager = OrphanedFormatManager(_settings)
-worker = instance(_settings)
+worker = instance(_settings, True)
 
 
 @Singleton
@@ -66,31 +65,33 @@ class ClangFormatDispatcher:
         worker.setFormatHandler(Handler())
 
     def dispatch(self, paths):
-        global worker, manager
+        global worker
         for path in paths:
             if not path: continue
             if os.path.isfile(path):
                 if not worker.postSavedFile(path):
-                    manager.exec(path)
+                    # manager.exec(path)
+                    print('{} post failed'.format(path))
             else:
                 worker.addFolder(path)
                 worker.workAsync()
 
     def cancel(self, paths):
-        global worker, manager
+        global worker
         for path in paths:
             if not os.path.isdir(path):
-                manager.remove(path)
+                # manager.remove(path)
+                print('{} is not included'.format(path))
             else:
                 print('remove folder:', path)
                 worker.removeFolder(path)
 
     def invalidate(self):
-        global worker, manager
+        global worker
         worker.wait()
         worker.clean()
         print('clean worker')
-        manager.reset()
+        # manager.reset()
 
 
 def dispatcher():
@@ -101,22 +102,27 @@ class ClangFormatListener(sublime_plugin.EventListener):
 
     def on_post_save(self, view):
         path = view.file_name()
-        if path and path == os.path.join(
-                sublime.packages_path(),
-                'ClangFormat/ClangFormat.sublime-settings'):
+        settingsPath = os.path.join(
+            sublime.packages_path(),
+            'ClangFormat/ClangFormat.sublime-settings')
+        if path and os.path.samefile(path, settingsPath):
             print('load ClangFormat sublime-settings')
             _loadSettings()
+            global _settings
+            Settings.setDefFormatOnSave(_settings['format_on_save'])
+            print('change settings default value of format_on_save')
             return
         dispatcher().dispatch([path])
         pass
 
     def on_modified(self, view):
-        path = view.file_name()
-        if not path: return
-        global manager
-        formatter = manager.formatter(path)
-        if formatter:
-            formatter.modified = True
+        # path = view.file_name()
+        # if not path: return
+        # global manager
+        # formatter = manager.formatter(path)
+        # if formatter:
+        #     formatter.modified = True
+        pass
 
     def on_pre_close_window(self, window):
         print('close window')

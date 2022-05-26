@@ -1,4 +1,4 @@
 {
-    "format_on_save":true,
-    "executable":"clang-format"
+    "executable": "clang-format",
+    "format_on_save": true
 }

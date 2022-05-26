@@ -6,8 +6,13 @@ SETTINGS_NAME = 'clang-format-settings.json'
 
 class Settings:
 
-    __initialParams__ = [('ignored', []), ('format_on_save', False),
+    __initialParams__ = [('ignored', []), ('format_on_save', True),
                          ('has_config', False)]
+
+    @classmethod
+    def setDefFormatOnSave(cls, flag):
+        if flag != cls.__initialParams__[1][1]:
+            cls.__initialParams__[1] = ('format_on_save', flag)
 
     def __init__(self, parent, path):
         self._parent = parent
