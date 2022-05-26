@@ -3,12 +3,13 @@ import sublime, sublime_plugin
 import os
 import subprocess
 
+
 def genOpenDirCommand(path):
     if sublime.platform() == 'windows':
         return 'explorer "' + path + '"'
     elif sublime.platform() == 'linux':
         return 'nautilus --browser {}'.format(path)
-    elif sublime.platform()=='osx':
+    elif sublime.platform() == 'osx':
         return 'open "{}"'.format(path)
 
 
@@ -18,8 +19,9 @@ def genOpenShellCommand(path):
         return 'start powershell -NoExit Set-Location ' + path
     elif sublime.platform() == 'linux':
         return 'gnome-terminal --window --working-directory={}'.format(path)
-    elif sublime.platform()=='osx':
-        command="""osascript -e 'tell application "Terminal" to activate' -e 'tell application "Terminal" to do script "cd \\"{}\\" "'""".format(path)
+    elif sublime.platform() == 'osx':
+        command = """osascript -e 'tell application "Terminal" to activate' -e 'tell application "Terminal" to do script "cd \\"{}\\" "'""".format(
+            path)
         return command
 
 
