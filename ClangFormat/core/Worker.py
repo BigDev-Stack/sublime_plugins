@@ -191,16 +191,25 @@ class Worker(object):
         self.workAsync()
         self.wait()
 
-    def postFile(self, path):
+    def _post(self, path):
+        pass
+
+    def _start(self, folder):
+        self.addFolder(folder)
+        self.workAsync()
+
+    def postFile(self, path, force=False):
         self.wait()
         if not os.path.exists(path):
             return False
         if os.path.basename(path) == SETTINGS_NAME:
             return self._reload(path)
         if not isCxxFile(path): return False
-        tree = self._tree.getTree(os.path.dirname(path))
-        if not tree:
-            return False
+        folder = os.path.dirname(path)
+        tree = self._tree.getTree(folder)
+        if force and (not tree or not tree.attach):
+            self._start(folder)
+            return
         settings = tree.attach
         if not settings:
             print('path', os.path.dirname(path), 'has not build yet')
@@ -222,7 +231,7 @@ class Worker(object):
         return True
 
     def postSavedFile(self, path):
-        return self.postFile(path)
+        return self.postFile(path, True)
 
     @property
     def path(self):
