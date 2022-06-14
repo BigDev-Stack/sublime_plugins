@@ -162,7 +162,8 @@ class FileTree:
     def markModified(self, path):
         if path in self._paths:
             self._modified.add(path)
-        elif os.path.samefile(os.path.dirname(path), self.cwd()):
+        elif os.path.normcase(os.path.dirname(path)) == os.path.normcase(
+                self.cwd()):
             self._paths.add(path)
             self._modified.add(path)
         else:
